@@ -1,1 +1,51 @@
-echo "Script1"
+#!/bin/bash
+
+flag=0
+origin_path=""
+destination_path=""
+files_synced=0
+
+if (( $# < 2 )); then
+echo "Call script with correct number of arguments."
+exit 25
+fi
+
+if [ "$1" = "-r" ] && [ $# -eq 2 ]; then
+echo "Not enough arguments."
+exit 25
+fi
+
+if [ "$1" = "-r" ] && [ $# -ge 3 ]; then
+flag=1
+fi
+
+if [ $flag -eq 1 ]; then
+echo "Flag is setted up."
+origin_path="$2"
+destination_path="$3"
+else
+echo "Flag is not setted up."
+origin_path="$1"
+destination_path="$2"
+fi
+
+echo "Present of -r flag: $flag"
+echo "Origin path(1): $origin_path"
+echo "Destination path(2): $destination_path"
+
+for file in $origin_path/*; do
+if [ -f $file ]; then
+	if [ $destination_path/$(basename $file) -ot $file ]; then
+		echo "$destination_path/$(basename $file)"
+		cp $file $destination_path/
+		files_synced=$((files_synced+1))
+	fi
+else
+	echo "$file is directory."
+fi
+done
+
+echo "Files synced: $files_synced."
+
+
+
