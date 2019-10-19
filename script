@@ -40,8 +40,9 @@ if [ -f $file ]; then
 		cp $file $destination_path/
 		files_synced=$((files_synced+1))
 	fi
-else
-	echo "$file is directory."
+elif [ -d $file ]; then
+	echo "$file"
+	/bin/bash script $file $destination_path/$(basename $file)
 fi
 done
 
