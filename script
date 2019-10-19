@@ -1,9 +1,9 @@
 #!/bin/bash
 
 flag=0
-origin_path=""
-destination_path=""
-files_synced=0
+originPath=""
+destinationPath=""
+filesSynced=0
 
 if (( $# < 2 )); then
 echo "Call script with correct number of arguments."
@@ -21,32 +21,49 @@ fi
 
 if [ $flag -eq 1 ]; then
 echo "Flag is setted up."
-origin_path="$2"
-destination_path="$3"
+originPath="$2"
+destinationPath="$3"
 else
 echo "Flag is not setted up."
-origin_path="$1"
-destination_path="$2"
+originPath="$1"
+destinationPath="$2"
 fi
 
 echo "Present of -r flag: $flag"
-echo "Origin path(1): $origin_path"
-echo "Destination path(2): $destination_path"
+echo "Origin path(1): $originPath"
+echo "Destination path(2): $destinationPath"
 
-for file in $origin_path/*; do
+function syncData {
+local lOriginPath=$1
+local lDestinationPath=$2
+echo "New origin: $lOriginPath"
+echo "New destination: $lDestinationPath"
+for file in $lOriginPath/*; do
 if [ -f $file ]; then
-	if [ $destination_path/$(basename $file) -ot $file ]; then
-		echo "$destination_path/$(basename $file)"
-		cp $file $destination_path/
-		files_synced=$((files_synced+1))
-	fi
+        if [ $lDestinationPath/$(basename $file) -ot $file ]; then
+		echo "Trying copy: $file"
+                echo "To: $destination_path/$(basename $file)"
+                cp $file $lDestinationPath/
+                filesSynced=$((filesSynced+1))
+	#else
+	#	read -n1 -p "Newer $(basename $file) in destination. Keep(0) or rewrite older version(1)?\n"
+	#	if [ $REPLY -ge 1 ]; then
+	#		cp $file $lDestinationPath/
+	#	fi
+        fi
 elif [ -d $file ]; then
-	echo "$file"
-	/bin/bash script $file $destination_path/$(basename $file)
+        echo "Directory found: $file"
+	if [ -e $lDestinationPath/$(basename $file) ] && [ -d $lDestinationPath/$(basename $file) ]; then
+		echo "Directory in destination exists. Start sync."
+	else
+		echo "Creating directory in destination."
+		mkdir $lDestinationPath/$(basename $file)
+	fi
+	syncData $file $lDestinationPath/$(basename $file)
 fi
 done
+}
 
-echo "Files synced: $files_synced."
+syncData $originPath $destinationPath
 
-
-
+echo "Files synced: $filesSynced."
