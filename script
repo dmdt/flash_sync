@@ -59,14 +59,14 @@ if [ -f $file ]; then
 	local secondFile=$(date -r $lDestinationPath/$(basename $file) +"%s")
 	echo "Seconds $firstFile"
 	echo "Seconds2 $secondFile"
-        if [[ "$lDestinationPath/$(basename $file)" -ot "$file" ]]; then
+        if [ $firstFile -gt $secondFile ]; then
 		if [ $flag -eq 1 ]; then
 			echo "Copying: $file"
                 	echo "To: $lDestinationPath/$(basename $file)"
 		fi
                 cp $file $lDestinationPath/
                 filesSynced=$((filesSynced+1))
-	elif [[ "$file" -ot "$lDestinationPath/$(basename $file)" ]]; then
+	elif [ $firstFile -lt $secondFile ]; then
 		read -n1 -p "Newer ${red}$(basename $file)${reset} in destination. Keep(0) or rewrite older version(1)? "
 		echo ""
 		if [ $REPLY -ge 1 ]; then
