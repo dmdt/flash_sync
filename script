@@ -6,17 +6,26 @@ originPath=""
 destinationPath=""
 filesSynced=0
 
+red=`tput setaf 1`
+green=`tput setaf 2`
+reset=`tput sgr0`
+
+#Number of arguments should be greater than 1
+#At least 2 paths
 if (( $# < 2 )); then
 echo "Call script with correct number of arguments."
 exit 25
 fi
 
-if [ "$1" = "-r" ] && [ $# -eq 2 ]; then
+#If passed 2 params and 1 of them is key
+#Still not enough arguments
+if [ "$1" = "-v" ] && [ $# -eq 2 ]; then
 echo "Not enough arguments."
 exit 25
 fi
 
-if [ "$1" = "-r" ] && [ $# -ge 3 ]; then
+#If passed verbose flag
+if [ "$1" = "-v" ] && [ $# -ge 3 ]; then
 flag=1
 fi
 
@@ -25,39 +34,58 @@ echo "Flag is setted up."
 originPath="$2"
 destinationPath="$3"
 else
-echo "Flag is not setted up."
 originPath="$1"
 destinationPath="$2"
 fi
 
-echo "Present of -r flag: $flag"
-echo "Origin path(1): $originPath"
-echo "Destination path(2): $destinationPath"
+if [ $flag -eq 1 ]; then
+echo "Present of -v flag: $flag"
+echo "Origin path(1): ${green}$originPath${reset}"
+echo "Destination path(2): ${green}$destinationPath${reset}"
+fi
 
 function syncData {
 local lOriginPath=$1
 local lDestinationPath=$2
-echo "New origin: $lOriginPath"
-echo "New destination: $lDestinationPath"
+
+if [ $flag -eq 1 ]; then
+echo "New origin: ${green}$lOriginPath${reset}"
+echo "New destination: ${green}$lDestinationPath${reset}"
+fi
+
 for file in $lOriginPath/*; do
 if [ -f $file ]; then
-        if [ $lDestinationPath/$(basename $file) -ot $file ]; then
-		echo "Trying copy: $file"
-                echo "To: $destination_path/$(basename $file)"
+	local firstFile=$(date -r $file +"%s")
+	local secondFile=$(date -r $lDestinationPath/$(basename $file) +"%s")
+	echo "Seconds $firstFile"
+	echo "Seconds2 $secondFile"
+        if [[ "$lDestinationPath/$(basename $file)" -ot "$file" ]]; then
+		if [ $flag -eq 1 ]; then
+			echo "Copying: $file"
+                	echo "To: $lDestinationPath/$(basename $file)"
+		fi
                 cp $file $lDestinationPath/
                 filesSynced=$((filesSynced+1))
-	#else
-	#	read -n1 -p "Newer $(basename $file) in destination. Keep(0) or rewrite older version(1)?\n"
-	#	if [ $REPLY -ge 1 ]; then
-	#		cp $file $lDestinationPath/
-	#	fi
+	elif [[ "$file" -ot "$lDestinationPath/$(basename $file)" ]]; then
+		read -n1 -p "Newer ${red}$(basename $file)${reset} in destination. Keep(0) or rewrite older version(1)? "
+		echo ""
+		if [ $REPLY -ge 1 ]; then
+			cp $file $lDestinationPath/
+			filesSynced=$((filesSynced+1))
+		fi
         fi
 elif [ -d $file ]; then
-        echo "Directory found: $file"
+	if [ $flag -eq 1 ]; then
+        	echo "Directory found: $file"
+	fi
 	if [ -e $lDestinationPath/$(basename $file) ] && [ -d $lDestinationPath/$(basename $file) ]; then
+		if [ $flag -eq 1 ]; then
 		echo "Directory in destination exists. Start sync."
+		fi
 	else
+		if [ $flag -eq 1 ]; then
 		echo "Creating directory in destination."
+		fi
 		mkdir $lDestinationPath/$(basename $file)
 	fi
 	syncData $file $lDestinationPath/$(basename $file)
@@ -67,4 +95,6 @@ done
 
 syncData $originPath $destinationPath
 
-echo "Files synced: $filesSynced."
+if [ $flag -eq 1 ]; then
+echo "Files synced: ${green}$filesSynced${reset}."
+fi
