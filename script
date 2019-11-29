@@ -53,48 +53,70 @@ echo "New origin: ${green}$lOriginPath${reset}"
 echo "New destination: ${green}$lDestinationPath${reset}"
 fi
 
+#Loop over files in origin directory
 for file in $lOriginPath/*; do
-if [ -f $file ]; then
-	local firstFile=$(date -r $file +"%s")
-	local secondFile=$(date -r $lDestinationPath/$(basename $file) +"%s")
-	echo "Seconds $firstFile"
-	echo "Seconds2 $secondFile"
-        if [ $firstFile -gt $secondFile ]; then
+	#When file is an directory
+	if [ -d $file ]; then
 		if [ $flag -eq 1 ]; then
-			echo "Copying: $file"
-                	echo "To: $lDestinationPath/$(basename $file)"
+	        	echo "Directory found: $file"
 		fi
-                cp $file $lDestinationPath/
-                filesSynced=$((filesSynced+1))
-	elif [ $firstFile -lt $secondFile ]; then
-		read -n1 -p "Newer ${red}$(basename $file)${reset} in destination. Keep(0) or rewrite older version(1)? "
-		echo ""
-		if [ $REPLY -ge 1 ]; then
-			cp $file $lDestinationPath/
-			filesSynced=$((filesSynced+1))
+		#Checking is such directory exists in destionation path
+		if [ -e $lDestinationPath/$(basename $file) ] && [ -d $lDestinationPath/$(basename $file) ]; then
+			if [ $flag -eq 1 ]; then
+				echo "Directory in destination exists. Start sync."
+			fi
+		#Otherwise create this directory
+		else
+			if [ $flag -eq 1 ]; then
+				echo "Creating directory in destination."
+			fi
+			mkdir $lDestinationPath/$(basename $file)
 		fi
+		#Recursively call this function
+		syncData $file $lDestinationPath/$(basename $file)
+	#When file is an file and exists in destination directory
+	elif [ -f "$lDestinationPath/$(basename $file)" ]; then
+		#Get modification time of origin file
+		local firstFile=$(date -r $file +"%s")
+		#Get modification time of target file
+	    local secondFile=$(date -r $lDestinationPath/$(basename $file) +"%s")
+	    if [ $flag -eq 1 ]; then
+        	echo "Seconds $firstFile"
+        	echo "Seconds2 $secondFile"
         fi
-elif [ -d $file ]; then
-	if [ $flag -eq 1 ]; then
-        	echo "Directory found: $file"
-	fi
-	if [ -e $lDestinationPath/$(basename $file) ] && [ -d $lDestinationPath/$(basename $file) ]; then
-		if [ $flag -eq 1 ]; then
-		echo "Directory in destination exists. Start sync."
-		fi
+        #Whether origin file newer than target
+        if [ $firstFile -gt $secondFile ]; then
+            if [ $flag -eq 1 ]; then
+                echo "Copying: $file"
+                echo "To: $lDestinationPath/$(basename $file)"
+            fi
+            cp $file $lDestinationPath/
+            filesSynced=$((filesSynced+1))
+        #Otherwise we should ask user or keep all as is
+        elif [ $firstFile -lt $secondFile ]; then
+        	if [ $flag -eq 1 ]; then
+            	read -n1 -p "Newer ${red}$(basename $file)${reset} in destination. Keep as is(0) or replace with older version(1)? "
+            	echo ""
+            	if [ $REPLY -ge 1 ]; then
+            		#Replace with older version
+                	cp $file $lDestinationPath/
+                	filesSynced=$((filesSynced+1))
+            	fi
+            fi
+        fi
+    #When file not presents in destination folder
 	else
 		if [ $flag -eq 1 ]; then
-		echo "Creating directory in destination."
+			echo "File ${red}$(basename $file)${reset} doesn't exists in destination."
 		fi
-		mkdir $lDestinationPath/$(basename $file)
+		cp $file $lDestinationPath/
+		filesSynced=$((filesSynced+1))
 	fi
-	syncData $file $lDestinationPath/$(basename $file)
-fi
 done
 }
 
 syncData $originPath $destinationPath
 
 if [ $flag -eq 1 ]; then
-echo "Files synced: ${green}$filesSynced${reset}."
+	echo "Files synced: ${green}$filesSynced${reset}."
 fi
