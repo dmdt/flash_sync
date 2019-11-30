@@ -1,0 +1,45 @@
+..................................................................................................................................
+RUS:
+1. Подключаем флеш-накопитель к компьютеру
+2. Ищем его среди списка, выданного по команде systemctl list-units -t mount. Запоминаем отображение его имени .mount.
+3. Создание сервиса systemd:
+	3.1. Создаём файл в директории /etc/systemd/system/ИМЯ_СЕРВИСА.service/
+	3.2. Заполняем его информацией
+
+	[Unit]
+	Description=SharedMountTrigger
+	Requires=ИМЯ_УСТРОЙСТВА.mount
+	After=ИМЯ_УСТРОЙСТВА.mount
+	
+	[Service]
+	ExecStart=.../СКРИПТ.sh/ +аргументы запуска
+	
+	[Install]
+	WantedBy=ИМЯ_УСТРОЙСТВА.mount
+	
+4. Запускаем сервиc:
+systemctl start ИМЯ_СЕРВИСА.service
+systemctl enable ИМЯ_СЕРВИСА.service
+..................................................................................................................................
+ENG:
+1. Insert your USB flash drive into the pc
+2. Find your flash drive with systemctl list-units -t mount. Remember its name.
+3. Creation of systemd service:
+	3.1. Create service file in this directory /etc/systemd/system/SERVICE_NAME.service/
+	3.2. Put this inside:
+	
+	[Unit]
+	Description=SharedMountTrigger
+	Requires=DEVICE_NAME.mount
+	After=DEVICE_NAME.mount
+	
+	[Service]
+	ExecStart=.../SCRIPT.sh/ +launch args.
+	
+	[Install]
+	WantedBy=DEVICE_NAME.mount
+	
+4. You have to start your service:
+systemctl start SERVICE_NAME.service
+systemctl enable SERVICE_NAME.service
+..................................................................................................................................
